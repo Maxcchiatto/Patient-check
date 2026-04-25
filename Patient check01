@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจสอบนัดหมาย - Smart Appointment</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background: #f0f4f8; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
+        h2 { color: #0056b3; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px; }
+        input { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 1.2rem; text-align: center; font-weight: bold; }
+        .btn-search { width: 100%; padding: 15px; background: #0056b3; color: white; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer; transition: 0.3s; margin-bottom: 10px; }
+        
+        /* สไตล์ใบนัด */
+        #appointmentCard { display: none; margin-top: 25px; padding: 20px; border: 2px solid #0056b3; border-radius: 10px; text-align: left; background: #fff; position: relative; }
+        .card-header { font-weight: bold; color: #d32f2f; margin-bottom: 10px; text-align: center; font-size: 1.2rem; border-bottom: 1px solid #eee; }
+        .info-row { margin: 8px 0; font-size: 1rem; border-bottom: 1px ghostwhite solid; }
+        .label { font-weight: bold; color: #555; display: inline-block; width: 90px; }
+        .highlight { color: #000; font-weight: bold; }
+
+        /* ส่วนคำแนะนำ (ข้อ 2) */
+        .prep-guide { margin-top: 15px; padding: 12px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; color: #856404; }
+        .prep-header { font-weight: bold; display: flex; align-items: center; margin-bottom: 5px; }
+
+        /* ปุ่มบันทึก (ข้อ 4) */
+        .btn-print { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 15px; font-weight: bold; }
+        
+        @media print {
+            .btn-search, input, .btn-print, h2, p { display: none; }
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; }
+            #appointmentCard { display: block !important; border: 1px solid #000; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🏥 ตรวจสอบนัดหมาย</h2>
+    <p>กรอกเลข HN เพื่อดูรายละเอียดการเตรียมตัว</p>
+    <input type="text" id="hnInput" placeholder="กรอกเลข HN ของท่าน" maxlength="15">
+    <button class="btn-search" onclick="searchHN()">🔍 ตรวจสอบข้อมูล</button>
+
+    <div id="appointmentCard">
+        <div class="card-header">บัตรนัดตรวจแผนกเอกซเรย์</div>
+        <div class="info-row"><span class="label">เลข HN:</span> <span id="resHN" class="highlight"></span></div>
+        <div class="info-row"><span class="label">ชื่อคนไข้:</span> <span id="resName" class="highlight"></span></div>
+        <div class="info-row"><span class="label">วันที่นัด:</span> <span id="resDate" class="highlight"></span></div>
+        <div class="info-row"><span class="label">เวลานัด:</span> <span id="resTime" class="highlight"></span></div>
+        <div class="info-row"><span class="label">รายการ:</span> <span id="resDetail" class="highlight" style="color:#0056b3;"></span></div>
+        
+        <div id="prepArea" class="prep-guide" style="display:none;">
+            <div class="prep-header">⚠️ คำแนะนำในการเตรียมตัว:</div>
+            <div id="resPrep"></div>
+        </div>
+
+        <button class="btn-print" onclick="window.print()">📸 บันทึกหน้าจอ / พิมพ์ใบนัด</button>
+    </div>
+
+    <div id="errorMsg" style="display:none; color:red; margin-top:20px;">❌ ไม่พบข้อมูลเลข HN นี้</div>
+</div>
+
+<script>
+    const SHEET_ID = '1-HCY_NHGAVifnw9n_cozsxuupiwUizNcecsD8sxcIig';
+    const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+    async function searchHN() {
+        const hnInput = document.getElementById('hnInput').value.trim();
+        const card = document.getElementById('appointmentCard');
+        const errorMsg = document.getElementById('errorMsg');
+        const prepArea = document.getElementById('prepArea');
+
+        if (!hnInput) return alert("กรุณากรอกเลข HN ครับ");
+
+        try {
+            const response = await fetch(URL);
+            const text = await response.text();
+            const data = JSON.parse(text.substr(47).slice(0, -2));
+            const rows = data.table.rows;
+
+            let found = rows.find(r => r.c[0] && String(r.c[0].v).includes(hnInput));
+
+            if (found) {
+                errorMsg.style.display = "none";
+                card.style.display = "block";
+                
+                document.getElementById('resHN').innerText = found.c[0].v;
+                document.getElementById('resName').innerText = found.c[1] ? found.c[1].v : '-';
+                document.getElementById('resDate').innerText = found.c[2] ? found.c[2].v : '-';
+                document.getElementById('resTime').innerText = found.c[3] ? (found.c[3].f || found.c[3].v) : '-';
+                document.getElementById('resDetail').innerText = found.c[4] ? found.c[4].v : '-';
+                
+                // แสดงคำแนะนำถ้ามีข้อมูลในคอลัมน์ G (Index 6)
+                const prepText = found.c[6] ? found.c[6].v : "";
+                if (prepText) {
+                    prepArea.style.display = "block";
+                    document.getElementById('resPrep').innerText = prepText;
+                } else {
+                    prepArea.style.display = "none";
+                }
+            } else {
+                card.style.display = "none";
+                errorMsg.style.display = "block";
+            }
+        } catch (e) {
+            alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+        }
+    }
+</script>
+
+</body>
+</html>
