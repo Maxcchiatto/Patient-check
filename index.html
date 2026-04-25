@@ -21,11 +21,14 @@
         .ticket-header { text-align: center; border-bottom: 2px dashed #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold; }
         .queue-badge { background: var(--accent); color: var(--primary); padding: 8px; border-radius: 10px; text-align: center; margin-bottom: 15px; }
         .queue-badge b { font-size: 1.8rem; display: block; }
+        
+        /* ปรับ Grid ใหม่ให้แสดงผลครบ */
         .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .info-group { margin-bottom: 8px; border-bottom: 1px solid #f9f9f9; padding-bottom: 4px; }
-        .info-group label { font-size: 0.75rem; color: #777; display: block; }
-        .info-group span { font-weight: 700; color: var(--text); font-size: 0.9rem; }
+        .info-group { margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
+        .info-group label { font-size: 0.7rem; color: #888; display: block; }
+        .info-group span { font-weight: 700; color: var(--text); font-size: 0.85rem; }
         .full-width { grid-column: span 2; }
+
         .prep-box { background: #fff9e6; border-left: 4px solid #ffc107; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.85rem; }
         .note-box { background: #fdf2f2; border-left: 4px solid #dc3545; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.85rem; color: #b02a37; }
         .btn-save { background-color: #28a745; color: white; margin-top: 15px; }
@@ -40,7 +43,7 @@
     </div>
 
     <div class="card">
-        <h2 style="margin: 0 0 15px 0;">🏥 ตรวจสอบนัดหมาย</h2>
+        <h2>🏥 ตรวจสอบนัดหมาย</h2>
         <input type="text" id="hnInput" placeholder="กรอกเลข HN">
         <button class="btn btn-search" onclick="searchHN()">ค้นหาข้อมูล</button>
         
@@ -66,11 +69,11 @@
                 </div>
 
                 <div id="prepArea" class="prep-box" style="display:none;">
-                    <strong>⚠️ การเตรียมตัว (งดน้ำ/อาหาร):</strong> <div id="resPrep"></div>
+                    <strong>⚠️ การเตรียมตัว:</strong> <div id="resPrep"></div>
                 </div>
 
                 <div id="noteArea" class="note-box" style="display:none;">
-                    <strong>📌 หมายเหตุเพิ่มเติม:</strong> <div id="resNote"></div>
+                    <strong>📌 หมายเหตุ:</strong> <div id="resNote"></div>
                 </div>
             </div>
             <button class="btn btn-save" onclick="saveCapture()">📸 บันทึกใบนัดลงเครื่อง</button>
@@ -80,15 +83,15 @@
 
 <script>
     const SHEET_ID = '1-HCY_NHGAVifnw9n_cozsxuupiwUizNcecsD8sxcIig';
-    const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+    // บังคับดึงข้อมูลคอลัมน์ A ถึง N (0-13)
+    const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&range=A:N`;
 
     async function updateLiveQueue() {
         try {
             const res = await fetch(URL);
             const text = await res.text();
             const data = JSON.parse(text.substr(47).slice(0, -2));
-            // ในรูปของคุณ คิวปัจจุบันอยู่ที่ Col H (Index 7) แถวแรก
-            const currentQ = data.table.rows[0].c[7] ? data.table.rows[0].c[7].v : "-";
+            const currentQ = data.table.rows[0].c[7] ? (data.table.rows[0].c[7].f || data.table.rows[0].c[7].v) : "-";
             document.getElementById('liveQueueNow').innerText = currentQ;
         } catch (e) { console.error(e); }
     }
@@ -107,40 +110,43 @@
 
             if (row) {
                 display.style.display = "block";
-                const getVal = (idx) => (row.c[idx] ? (row.c[idx].f || row.c[idx].v) : '-');
+                const getVal = (idx) => {
+                    if (!row.c[idx]) return '-';
+                    return row.c[idx].f || row.c[idx].v || '-';
+                };
 
-                // ดึงข้อมูลตามลำดับในรูปภาพของคุณ
+                // แสดงผลทุกฟิลด์ตามลำดับที่คุณขอ
                 document.getElementById('resHN').innerText = getVal(0);      // A
                 document.getElementById('resName').innerText = getVal(1);    // B
                 document.getElementById('resDate').innerText = getVal(2);    // C
                 document.getElementById('resTime').innerText = getVal(3);    // D
                 document.getElementById('resDetail').innerText = getVal(4);  // E
                 document.getElementById('resDoctor').innerText = getVal(5);  // F
-                document.getElementById('resQueue').innerText = getVal(8);   // I (คิวคนใช้)
+                document.getElementById('resQueue').innerText = getVal(8);   // I
                 
                 document.getElementById('resSitti').innerText = getVal(9);   // J
                 document.getElementById('resClinic').innerText = getVal(10); // K
                 document.getElementById('resWriter').innerText = getVal(11); // L
                 
-                // คำแนะนำ (Col G - Index 6)
-                const prep = row.c[6] ? row.c[6].v : "";
-                document.getElementById('prepArea').style.display = prep ? "block" : "none";
+                // การเตรียมตัว (G)
+                const prep = getVal(6);
+                document.getElementById('prepArea').style.display = prep !== '-' ? "block" : "none";
                 document.getElementById('resPrep').innerText = prep;
 
-                // หมายเหตุ (Col M - Index 12) **ในรูปของคุณเป็นคอลัมน์ M**
-                const note = row.c[12] ? row.c[12].v : "";
-                document.getElementById('noteArea').style.display = note ? "block" : "none";
+                // หมายเหตุ (M)
+                const note = getVal(12);
+                document.getElementById('noteArea').style.display = note !== '-' ? "block" : "none";
                 document.getElementById('resNote').innerText = note;
 
-            } else { alert("ไม่พบข้อมูล HN นี้ในตาราง"); }
+            } else { alert("ไม่พบข้อมูลหมายเลข HN นี้"); }
         } catch (e) { alert("เกิดข้อผิดพลาดในการโหลดข้อมูล"); }
     }
 
     function saveCapture() {
         html2canvas(document.getElementById('captureArea'), { scale: 3 }).then(canvas => {
             const link = document.createElement('a');
-            link.download = `ใบนัด_HN_${document.getElementById('resHN').innerText}.png`;
-            link.href = canvas.toDataURL("image/png");
+            link.download = `Appoint_HN_${document.getElementById('resHN').innerText}.png`;
+            link.href = canvas.toDataURL();
             link.click();
         });
     }
