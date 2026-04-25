@@ -24,7 +24,7 @@
         .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .info-group { margin-bottom: 8px; border-bottom: 1px solid #f9f9f9; padding-bottom: 4px; }
         .info-group label { font-size: 0.75rem; color: #777; display: block; }
-        .info-group span { font-weight: 700; color: var(--text); font-size: 0.9rem; word-break: break-all; }
+        .info-group span { font-weight: 700; color: var(--text); font-size: 0.9rem; }
         .full-width { grid-column: span 2; }
         .prep-box { background: #fff9e6; border-left: 4px solid #ffc107; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.85rem; }
         .note-box { background: #fdf2f2; border-left: 4px solid #dc3545; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.85rem; color: #b02a37; }
@@ -51,22 +51,26 @@
 
                 <div class="grid-info">
                     <div class="info-group"><label>เลข HN</label><span id="resHN">-</span></div>
-                    <div class="info-group"><label>สิทธิการรักษา</label><span id="resSitti">-</span></div> <div class="info-group full-width"><label>ชื่อ-นามสกุล</label><span id="resName">-</span></div>
+                    <div class="info-group"><label>สิทธิการรักษา</label><span id="resSitti">-</span></div>
+                    
+                    <div class="info-group full-width"><label>ชื่อ-นามสกุล</label><span id="resName">-</span></div>
                     
                     <div class="info-group"><label>วันที่นัด</label><span id="resDate">-</span></div>
                     <div class="info-group"><label>เวลานัด</label><span id="resTime">-</span></div>
                     
-                    <div class="info-group"><label>คลินิก</label><span id="resClinic">-</span></div> <div class="info-group"><label>แพทย์ผู้ตรวจ</label><span id="resDoctor">-</span></div>
+                    <div class="info-group"><label>คลินิก</label><span id="resClinic">-</span></div>
+                    <div class="info-group"><label>แพทย์ผู้ตรวจ</label><span id="resDoctor">-</span></div>
                     
-                    <div class="info-group"><label>เหตุที่นัด</label><span id="resReason">-</span></div> <div class="info-group"><label>ผู้เขียนใบนัด</label><span id="resWriter">-</span></div> <div class="info-group full-width"><label>รายการตรวจ / สถานที่</label><span id="resDetail" style="color: #0056b3;">-</span></div>
+                    <div class="info-group"><label>ผู้เขียนใบนัด</label><span id="resWriter">-</span></div>
+                    <div class="info-group"><label>รายการตรวจ</label><span id="resDetail">-</span></div>
                 </div>
 
                 <div id="prepArea" class="prep-box" style="display:none;">
-                    <strong>⚠️ การเตรียมตัว:</strong> <div id="resPrep"></div>
+                    <strong>⚠️ การเตรียมตัว (งดน้ำ/อาหาร):</strong> <div id="resPrep"></div>
                 </div>
 
                 <div id="noteArea" class="note-box" style="display:none;">
-                    <strong>📌 หมายเหตุ (N):</strong> <div id="resNote"></div>
+                    <strong>📌 หมายเหตุเพิ่มเติม:</strong> <div id="resNote"></div>
                 </div>
             </div>
             <button class="btn btn-save" onclick="saveCapture()">📸 บันทึกใบนัดลงเครื่อง</button>
@@ -83,6 +87,7 @@
             const res = await fetch(URL);
             const text = await res.text();
             const data = JSON.parse(text.substr(47).slice(0, -2));
+            // ในรูปของคุณ คิวปัจจุบันอยู่ที่ Col H (Index 7) แถวแรก
             const currentQ = data.table.rows[0].c[7] ? data.table.rows[0].c[7].v : "-";
             document.getElementById('liveQueueNow').innerText = currentQ;
         } catch (e) { console.error(e); }
@@ -104,33 +109,31 @@
                 display.style.display = "block";
                 const getVal = (idx) => (row.c[idx] ? (row.c[idx].f || row.c[idx].v) : '-');
 
-                // แสดงผลข้อมูล
-                document.getElementById('resHN').innerText = getVal(0);
-                document.getElementById('resName').innerText = getVal(1);
-                document.getElementById('resDate').innerText = getVal(2);
-                document.getElementById('resTime').innerText = getVal(3);
-                document.getElementById('resDetail').innerText = getVal(4);
-                document.getElementById('resDoctor').innerText = getVal(5);
-                document.getElementById('resQueue').innerText = getVal(8);
+                // ดึงข้อมูลตามลำดับในรูปภาพของคุณ
+                document.getElementById('resHN').innerText = getVal(0);      // A
+                document.getElementById('resName').innerText = getVal(1);    // B
+                document.getElementById('resDate').innerText = getVal(2);    // C
+                document.getElementById('resTime').innerText = getVal(3);    // D
+                document.getElementById('resDetail').innerText = getVal(4);  // E
+                document.getElementById('resDoctor').innerText = getVal(5);  // F
+                document.getElementById('resQueue').innerText = getVal(8);   // I (คิวคนใช้)
                 
-                // ข้อมูล J, K, L, M
-                document.getElementById('resSitti').innerText = getVal(9);   // Col J
-                document.getElementById('resClinic').innerText = getVal(10); // Col K
-                document.getElementById('resWriter').innerText = getVal(11); // Col L
-                document.getElementById('resReason').innerText = getVal(12); // Col M
+                document.getElementById('resSitti').innerText = getVal(9);   // J
+                document.getElementById('resClinic').innerText = getVal(10); // K
+                document.getElementById('resWriter').innerText = getVal(11); // L
                 
-                // การเตรียมตัว (Col G - Index 6)
+                // คำแนะนำ (Col G - Index 6)
                 const prep = row.c[6] ? row.c[6].v : "";
                 document.getElementById('prepArea').style.display = prep ? "block" : "none";
                 document.getElementById('resPrep').innerText = prep;
 
-                // หมายเหตุ (Col N - Index 13)
-                const note = row.c[13] ? row.c[13].v : "";
+                // หมายเหตุ (Col M - Index 12) **ในรูปของคุณเป็นคอลัมน์ M**
+                const note = row.c[12] ? row.c[12].v : "";
                 document.getElementById('noteArea').style.display = note ? "block" : "none";
                 document.getElementById('resNote').innerText = note;
 
-            } else { alert("ไม่พบข้อมูล HN นี้"); }
-        } catch (e) { alert("เกิดข้อผิดพลาด"); }
+            } else { alert("ไม่พบข้อมูล HN นี้ในตาราง"); }
+        } catch (e) { alert("เกิดข้อผิดพลาดในการโหลดข้อมูล"); }
     }
 
     function saveCapture() {
