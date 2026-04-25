@@ -3,39 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Appointment System - Full Details</title>
+    <title>Smart Appointment System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap');
         :root { --primary: #0056b3; --accent: #e3f2fd; --text: #333; }
         body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; padding: 15px; }
         .main-container { width: 100%; max-width: 500px; }
-        
-        .live-status { background: linear-gradient(135deg, #004494, #007bff); color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .live-status { background: linear-gradient(135deg, #004494, #007bff); color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; text-align: center; }
         .current-num { font-size: 2.5rem; font-weight: bold; display: block; }
-
         .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
         input { width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 12px; font-size: 1.2rem; text-align: center; margin-bottom: 10px; box-sizing: border-box; }
         .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-search { background-color: var(--primary); color: white; }
-
         #appointmentDisplay { display: none; margin-top: 20px; }
         .ticket { background: white; border: 1px solid #ddd; border-radius: 10px; padding: 15px; text-align: left; }
-        .ticket-header { text-align: center; border-bottom: 2px dashed #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold; font-size: 1.1rem; }
-        
+        .ticket-header { text-align: center; border-bottom: 2px dashed #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold; }
         .queue-badge { background: var(--accent); color: var(--primary); padding: 8px; border-radius: 10px; text-align: center; margin-bottom: 15px; }
         .queue-badge b { font-size: 1.8rem; display: block; }
-
-        /* การจัดเลย์เอาท์ข้อมูล */
         .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .info-group { margin-bottom: 8px; }
-        .info-group label { font-size: 0.75rem; color: #777; display: block; margin-bottom: 2px; }
-        .info-group span { font-weight: 700; color: var(--text); font-size: 0.95rem; word-break: break-word; }
-        .full-width { grid-column: span 2; border-top: 1px solid #f9f9f9; padding-top: 5px; }
-
+        .info-group { margin-bottom: 8px; border-bottom: 1px solid #f9f9f9; padding-bottom: 4px; }
+        .info-group label { font-size: 0.75rem; color: #777; display: block; }
+        .info-group span { font-weight: 700; color: var(--text); font-size: 0.9rem; word-break: break-all; }
+        .full-width { grid-column: span 2; }
         .prep-box { background: #fff9e6; border-left: 4px solid #ffc107; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.85rem; }
         .note-box { background: #fdf2f2; border-left: 4px solid #dc3545; padding: 10px; margin-top: 10px; border-radius: 5px; font-size: 0.85rem; color: #b02a37; }
-        
         .btn-save { background-color: #28a745; color: white; margin-top: 15px; }
     </style>
 </head>
@@ -48,32 +40,25 @@
     </div>
 
     <div class="card">
-        <h2 style="margin: 0 0 15px 0; font-size: 1.3rem;">🏥 ค้นหานัดหมาย</h2>
+        <h2 style="margin: 0 0 15px 0;">🏥 ตรวจสอบนัดหมาย</h2>
         <input type="text" id="hnInput" placeholder="กรอกเลข HN">
-        <button class="btn btn-search" onclick="searchHN()">ตรวจสอบข้อมูล</button>
+        <button class="btn btn-search" onclick="searchHN()">ค้นหาข้อมูล</button>
         
         <div id="appointmentDisplay">
             <div id="captureArea" class="ticket">
                 <div class="ticket-header">ใบนัดตรวจแผนกเอกซเรย์</div>
-                
                 <div class="queue-badge">ลำดับคิวของคุณ <b id="resQueue">-</b></div>
 
                 <div class="grid-info">
                     <div class="info-group"><label>เลข HN</label><span id="resHN">-</span></div>
-                    <div class="info-group"><label>สิทธิการรักษา</label><span id="resSitti">-</span></div>
-                    
-                    <div class="info-group full-width"><label>ชื่อ-นามสกุล</label><span id="resName">-</span></div>
+                    <div class="info-group"><label>สิทธิการรักษา</label><span id="resSitti">-</span></div> <div class="info-group full-width"><label>ชื่อ-นามสกุล</label><span id="resName">-</span></div>
                     
                     <div class="info-group"><label>วันที่นัด</label><span id="resDate">-</span></div>
                     <div class="info-group"><label>เวลานัด</label><span id="resTime">-</span></div>
                     
-                    <div class="info-group"><label>คลินิก</label><span id="resClinic">-</span></div>
-                    <div class="info-group"><label>แพทย์ผู้ตรวจ</label><span id="resDoctor">-</span></div>
-
-                    <div class="info-group full-width"><label>รายการตรวจ / สถานที่</label><span id="resDetail" style="color: #0056b3;">-</span></div>
+                    <div class="info-group"><label>คลินิก</label><span id="resClinic">-</span></div> <div class="info-group"><label>แพทย์ผู้ตรวจ</label><span id="resDoctor">-</span></div>
                     
-                    <div class="info-group"><label>เหตุที่นัด</label><span id="resReason">-</span></div>
-                    <div class="info-group"><label>ผู้เขียนใบนัด</label><span id="resWriter">-</span></div>
+                    <div class="info-group"><label>เหตุที่นัด</label><span id="resReason">-</span></div> <div class="info-group"><label>ผู้เขียนใบนัด</label><span id="resWriter">-</span></div> <div class="info-group full-width"><label>รายการตรวจ / สถานที่</label><span id="resDetail" style="color: #0056b3;">-</span></div>
                 </div>
 
                 <div id="prepArea" class="prep-box" style="display:none;">
@@ -81,7 +66,7 @@
                 </div>
 
                 <div id="noteArea" class="note-box" style="display:none;">
-                    <strong>📌 หมายเหตุ:</strong> <div id="resNote"></div>
+                    <strong>📌 หมายเหตุ (N):</strong> <div id="resNote"></div>
                 </div>
             </div>
             <button class="btn btn-save" onclick="saveCapture()">📸 บันทึกใบนัดลงเครื่อง</button>
@@ -117,33 +102,35 @@
 
             if (row) {
                 display.style.display = "block";
-                // ดึงข้อมูลพื้นฐาน
-                document.getElementById('resHN').innerText = row.c[0].v;
-                document.getElementById('resName').innerText = row.c[1] ? row.c[1].v : '-';
-                document.getElementById('resDate').innerText = row.c[2] ? row.c[2].v : '-';
-                document.getElementById('resTime').innerText = row.c[3] ? (row.c[3].f || row.c[3].v) : '-';
-                document.getElementById('resDetail').innerText = row.c[4] ? row.c[4].v : '-';
-                document.getElementById('resDoctor').innerText = row.c[5] ? row.c[5].v : '-';
-                document.getElementById('resQueue').innerText = row.c[8] ? row.c[8].v : '-';
+                const getVal = (idx) => (row.c[idx] ? (row.c[idx].f || row.c[idx].v) : '-');
+
+                // แสดงผลข้อมูล
+                document.getElementById('resHN').innerText = getVal(0);
+                document.getElementById('resName').innerText = getVal(1);
+                document.getElementById('resDate').innerText = getVal(2);
+                document.getElementById('resTime').innerText = getVal(3);
+                document.getElementById('resDetail').innerText = getVal(4);
+                document.getElementById('resDoctor').innerText = getVal(5);
+                document.getElementById('resQueue').innerText = getVal(8);
                 
-                // ดึงข้อมูลใหม่ที่ขอเพิ่ม
-                document.getElementById('resSitti').innerText = row.c[9] ? row.c[9].v : '-';   // Col J
-                document.getElementById('resClinic').innerText = row.c[10] ? row.c[10].v : '-'; // Col K
-                document.getElementById('resWriter').innerText = row.c[11] ? row.c[11].v : '-'; // Col L
-                document.getElementById('resReason').innerText = row.c[12] ? row.c[12].v : '-'; // Col M
+                // ข้อมูล J, K, L, M
+                document.getElementById('resSitti').innerText = getVal(9);   // Col J
+                document.getElementById('resClinic').innerText = getVal(10); // Col K
+                document.getElementById('resWriter').innerText = getVal(11); // Col L
+                document.getElementById('resReason').innerText = getVal(12); // Col M
                 
-                // คำแนะนำการเตรียมตัว
+                // การเตรียมตัว (Col G - Index 6)
                 const prep = row.c[6] ? row.c[6].v : "";
                 document.getElementById('prepArea').style.display = prep ? "block" : "none";
                 document.getElementById('resPrep').innerText = prep;
 
-                // หมายเหตุ (Col N)
+                // หมายเหตุ (Col N - Index 13)
                 const note = row.c[13] ? row.c[13].v : "";
                 document.getElementById('noteArea').style.display = note ? "block" : "none";
                 document.getElementById('resNote').innerText = note;
 
-            } else { alert("ไม่พบหมายเลข HN นี้ในระบบ"); }
-        } catch (e) { alert("เกิดข้อผิดพลาดในการดึงข้อมูล"); }
+            } else { alert("ไม่พบข้อมูล HN นี้"); }
+        } catch (e) { alert("เกิดข้อผิดพลาด"); }
     }
 
     function saveCapture() {
