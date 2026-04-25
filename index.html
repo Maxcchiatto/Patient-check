@@ -3,53 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบตรวจสอบนัดหมายด้วยเลข HN</title>
+    <title>Smart Queue & Appointment</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        body { font-family: 'Sarabun', sans-serif; background: #f0f4f8; display: flex; justify-content: center; padding: 20px; margin: 0; }
         .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
         h2 { color: #0056b3; margin-bottom: 20px; border-bottom: 2px solid #0056b3; padding-bottom: 10px; }
-        input { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 1.2rem; text-align: center; font-weight: bold; }
-        button { width: 100%; padding: 15px; background: #0056b3; color: white; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #003d7a; }
         
-        /* สไตล์หน้าตาใบนัด */
-        #appointmentCard { display: none; margin-top: 25px; padding: 20px; border: 2px dashed #0056b3; border-radius: 10px; text-align: left; background: #fafafa; position: relative; }
-        .card-header { font-weight: bold; color: #d32f2f; margin-bottom: 10px; text-align: center; border-bottom: 1px solid #ddd; }
-        .info-row { margin: 8px 0; font-size: 1rem; }
-        .label { font-weight: bold; color: #555; display: inline-block; width: 100px; }
+        /* ส่วนแสดงคิวรวม (Live Queue) */
+        .live-queue-box { background: #0056b3; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-around; align-items: center; }
+        .queue-now { font-size: 2.5rem; font-weight: bold; }
+        
+        input { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 1.2rem; text-align: center; font-weight: bold; }
+        .btn-search { width: 100%; padding: 15px; background: #0056b3; color: white; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer; transition: 0.3s; margin-bottom: 10px; font-weight: bold; }
+        
+        /* สไตล์ใบนัดและคิวส่วนตัว */
+        #appointmentCard { display: none; margin-top: 25px; padding: 20px; border: 2px solid #0056b3; border-radius: 10px; text-align: left; background: #fff; }
+        .my-queue-section { text-align: center; background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #bbdefb; }
+        .my-queue-number { font-size: 3rem; font-weight: bold; color: #d32f2f; line-height: 1; }
+        
+        .card-header { font-weight: bold; color: #333; margin-bottom: 10px; text-align: center; font-size: 1.1rem; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .info-row { margin: 8px 0; font-size: 1rem; border-bottom: 1px ghostwhite solid; }
+        .label { font-weight: bold; color: #666; display: inline-block; width: 90px; }
         .highlight { color: #000; font-weight: bold; }
-        .notfound { color: red; margin-top: 20px; font-weight: bold; display: none; }
+
+        .prep-guide { margin-top: 15px; padding: 12px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; color: #856404; }
+        .btn-print { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 15px; font-weight: bold; }
+        
+        @media print { .btn-search, input, .btn-print, h2, p, .live-queue-box { display: none; } body { padding: 0; } .container { box-shadow: none; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🏥 ตรวจสอบนัดหมาย (HN)</h2>
-    <p>กรุณากรอกหมายเลข HN 8 หลัก ของท่าน</p>
-    <input type="text" id="hnInput" placeholder="เช่น 68023734" maxlength="15">
-    <button onclick="searchHN()">🔍 ค้นหาข้อมูลนัดหมาย</button>
-
-    <div id="appointmentCard">
-        <div class="card-header">บัตรนัดตรวจออนไลน์</div>
-        <div class="info-row"><span class="label">เลข HN:</span> <span id="resHN" class="highlight"></span></div>
-        <div class="info-row"><span class="label">ชื่อคนไข้:</span> <span id="resName" class="highlight"></span></div>
-        <div class="info-row"><span class="label">วันที่นัด:</span> <span id="resDate" class="highlight"></span></div>
-        <div class="info-row"><span class="label">เวลานัด:</span> <span id="resTime" class="highlight"></span></div>
-        <div class="info-row"><span class="label">แพทย์:</span> <span id="resDoctor" class="highlight"></span></div>
-        <div class="info-row" style="margin-top:10px; padding:10px; background:#e3f2fd; border-radius:5px;">
-            <span class="label">รายการ:</span> <br>
-            <span id="resDetail" class="highlight" style="font-size:1.1rem; color:#0056b3;"></span>
-        </div>
-        <p style="font-size: 0.8rem; color: #888; text-align: center; margin-top: 15px;">*กรุณาแสดงหน้าจอนี้ต่อเจ้าหน้าที่เมื่อมาถึง</p>
+    <div class="live-queue-box">
+        <div>ขณะนี้เรียกคิวเบอร์</div>
+        <div id="currentQueueDisplay" class="queue-now">-</div>
     </div>
 
-    <div id="errorMsg" class="notfound">❌ ไม่พบข้อมูลเลข HN นี้ในระบบ</div>
+    <h2>🏥 ตรวจสอบนัดหมาย & คิว</h2>
+    <input type="text" id="hnInput" placeholder="กรอกเลข HN ของท่าน" maxlength="15">
+    <button class="btn-search" onclick="searchHN()">🔍 ตรวจสอบข้อมูล</button>
+
+    <div id="appointmentCard">
+        <div class="my-queue-section">
+            <div style="font-size: 0.9rem; color: #555;">ลำดับคิวของคุณคือ</div>
+            <div id="resQueue" class="my-queue-number">-</div>
+        </div>
+
+        <div class="card-header">รายละเอียดการนัดหมาย</div>
+        <div class="info-row"><span class="label">เลข HN:</span> <span id="resHN" class="highlight"></span></div>
+        <div class="info-row"><span class="label">ชื่อคนไข้:</span> <span id="resName" class="highlight"></span></div>
+        <div class="info-row"><span class="label">เวลานัด:</span> <span id="resTime" class="highlight"></span></div>
+        <div class="info-row"><span class="label">รายการ:</span> <span id="resDetail" class="highlight" style="color:#0056b3;"></span></div>
+        
+        <div id="prepArea" class="prep-guide" style="display:none;">
+            <strong>⚠️ การเตรียมตัว:</strong> <span id="resPrep"></span>
+        </div>
+
+        <button class="btn-print" onclick="window.print()">📸 บันทึกภาพหน้าจอ</button>
+    </div>
+
+    <div id="errorMsg" style="display:none; color:red; margin-top:20px; font-weight:bold;">❌ ไม่พบข้อมูลเลข HN นี้</div>
 </div>
 
 <script>
-    const SHEET_ID = '1-HCY_NHGAVifnw9n_cozsxuupiwUizNcecsD8sxcIig'; // ID ของคุณ
+    const SHEET_ID = '1-HCY_NHGAVifnw9n_cozsxuupiwUizNcecsD8sxcIig';
     const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+    // โหลดคิวปัจจุบันที่กำลังเรียกอยู่ (จากคอลัมน์ H แถวที่ 2)
+    async function loadLiveQueue() {
+        try {
+            const response = await fetch(URL);
+            const text = await response.text();
+            const data = JSON.parse(text.substr(47).slice(0, -2));
+            const liveQueue = data.table.rows[0].c[7] ? data.table.rows[0].c[7].v : "-";
+            document.getElementById('currentQueueDisplay').innerText = liveQueue;
+        } catch (e) { console.error("Queue load error"); }
+    }
 
     async function searchHN() {
         const hnInput = document.getElementById('hnInput').value.trim();
@@ -64,29 +95,35 @@
             const data = JSON.parse(text.substr(47).slice(0, -2));
             const rows = data.table.rows;
 
-            // ค้นหาใน Col A (เลข HN)
             let found = rows.find(r => r.c[0] && String(r.c[0].v).includes(hnInput));
 
             if (found) {
                 errorMsg.style.display = "none";
                 card.style.display = "block";
                 
-                // นำข้อมูลลงช่องต่างๆ (เช็คตำแหน่งคอลัมน์ให้ตรงกับที่เตรียมไว้)
                 document.getElementById('resHN').innerText = found.c[0].v;
                 document.getElementById('resName').innerText = found.c[1] ? found.c[1].v : '-';
-                document.getElementById('resDate').innerText = found.c[2] ? found.c[2].v : '-';
                 document.getElementById('resTime').innerText = found.c[3] ? (found.c[3].f || found.c[3].v) : '-';
                 document.getElementById('resDetail').innerText = found.c[4] ? found.c[4].v : '-';
-                document.getElementById('resDoctor').innerText = found.c[5] ? found.c[5].v : '-';
+                document.getElementById('resQueue').innerText = found.c[8] ? found.c[8].v : '-'; // คอลัมน์ I
+                
+                const prepText = found.c[6] ? found.c[6].v : "";
+                if (prepText) {
+                    document.getElementById('prepArea').style.display = "block";
+                    document.getElementById('resPrep').innerText = prepText;
+                } else {
+                    document.getElementById('prepArea').style.display = "none";
+                }
             } else {
                 card.style.display = "none";
                 errorMsg.style.display = "block";
             }
-        } catch (e) {
-            alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
-            console.error(e);
-        }
+        } catch (e) { alert("Error loading data"); }
     }
+
+    // ทำการโหลดคิวรวมทุกๆ 30 วินาที
+    loadLiveQueue();
+    setInterval(loadLiveQueue, 30000);
 </script>
 
 </body>
