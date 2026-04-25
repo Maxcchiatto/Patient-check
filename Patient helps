@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจสอบนัดหมายคนไข้</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background: linear-gradient(135deg, #71b7e6, #9b59b6); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); width: 90%; max-width: 400px; text-align: center; }
+        h1 { color: #2c3e50; font-size: 1.6rem; margin-bottom: 1.5rem; }
+        input { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1rem; box-sizing: border-box; outline: none; transition: 0.3s; }
+        input:focus { border-color: #9b59b6; }
+        button { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #219150; transform: translateY(-2px); }
+        #status { margin-top: 20px; padding: 20px; border-radius: 12px; display: none; text-align: left; line-height: 1.8; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .success { background: #d4edda; color: #155724; border-left: 5px solid #28a745; }
+        .notfound { background: #fff3cd; color: #856404; border-left: 5px solid #ffc107; }
+        .loading { color: white; font-style: italic; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🏥 ตรวจสอบนัดหมาย</h1>
+    <input type="text" id="nameInput" placeholder="พิมพ์ชื่อ-นามสกุล ของท่าน...">
+    <button onclick="searchAppointment()">ตรวจสอบข้อมูล</button>
+    <div id="status"></div>
+</div>
+
+<script>
+    // เชื่อมต่อกับ Sheet ของคุณเรียบร้อย
+    const SHEET_ID = '1-HCY_NHGAVifnw9n_cozsxuupiwUizNcecsD8sxcIig';
+    const SHEET_TITLE = 'Sheet1'; 
+    const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_TITLE}`;
+
+    async function searchAppointment() {
+        const nameInput = document.getElementById('nameInput').value.trim();
+        const statusDiv = document.getElementById('status');
+        
+        if (!nameInput) {
+            alert("กรุณาระบุชื่อก่อนค้นหาครับ");
+            return;
+        }
+
+        statusDiv.style.display = "block";
+        statusDiv.className = "";
+        statusDiv.innerHTML = "🔍 กำลังค้นหาข้อมูล...";
+
+        try {
+            const response = await fetch(URL);
+            const text = await response.text();
+            // ตัดส่วนหัวของ JSON จาก Google Sheets ออกเพื่อให้ parse ได้
+            const data = JSON.parse(text.substr(47).slice(0, -2));
+            const rows = data.table.rows;
+
+            let found = null;
+            for (let row of rows) {
+                // คอลัมน์ A = ชื่อ (index 0), B = เวลา (index 1), C = รายการ (index 2)
+                const patientName = row.c[0] ? String(row.c[0].v) : '';
+                if (patientName.toLowerCase().includes(nameInput.toLowerCase())) {
+                    found = {
+                        name: patientName,
+                        time: row.c[1] ? row.c[1].f || row.c[1].v : '-',
+                        detail: row.c[2] ? row.c[2].v : '-'
+                    };
+                    break;
+                }
+            }
+
+            if (found) {
+                statusDiv.className = "success";
+                statusDiv.innerHTML = `
+                    <strong>✅ พบข้อมูลการนัดหมาย</strong><br>
+                    👤 <b>ชื่อ:</b> ${found.name}<br>
+                    ⏰ <b>เวลานัด:</b> ${found.time} น.<br>
+                    📍 <b>รายการ:</b> ${found.detail}
+                `;
+            } else {
+                statusDiv.className = "notfound";
+                statusDiv.innerHTML = "❌ <b>ไม่พบรายชื่อนัดหมาย</b><br>กรุณาตรวจสอบชื่ออีกครั้ง หรือติดต่อเคาน์เตอร์พยาบาลครับ";
+            }
+        } catch (error) {
+            statusDiv.className = "notfound";
+            statusDiv.innerHTML = "⚠️ <b>เกิดข้อผิดพลาด</b><br>ไม่สามารถเชื่อมต่อฐานข้อมูลได้ โปรดลองอีกครั้ง";
+            console.error(error);
+        }
+    }
+</script>
+
+</body>
+</html>
